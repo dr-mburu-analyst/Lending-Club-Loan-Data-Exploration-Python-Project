@@ -1,7 +1,7 @@
-# Lending-Club-Project
+# Lending-Club-Loan Project
 
 ### Project goal
-The goal of this project was to analyze the Lending Club datadset to uncover insights that could help:
+The goal of this project was to analyze the Lending Club Loan datadset to uncover insights that could help:
 - Improve decision- making
 - Enhance profitability
 - Mitigate risks
