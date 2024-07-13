@@ -1,0 +1,181 @@
+# Start by importing the necessary libraries for data analysis
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import math
+import warnings
+warnings.filterwarnings("ignore")
+from IPython.display import display
+import time
+start_time = time.time()
+
+# Adjust matplotlib parameters
+plt.rcParams['agg.path.chunksize'] = 10000
+plt.rcParams['path.simplify_threshold'] = 1.0
+
+# Loading the Loan Data and converting into dataframe
+
+loan_df = pd.read_csv('loan.csv', low_memory=False)
+
+# Data Cleaning
+# Get the first 5 rows of the data. This gives an idea of whether the data has headers
+
+print('loan_df.head()')
+print(loan_df.head())
+print("")
+
+# summary of the loan data.2260668 rows, 145 columns
+print(loan_df.shape)
+
+# checking if the data has footer
+print('loan_df.tail()')
+print(loan_df.tail())
+print("")
+
+# Get loan info
+# get the basic information about the data
+print('loan_df.info()')
+print(loan_df.info())
+print("")
+
+# Check for loan status to gather insights into data composition, formulate hypothesis, or simply understand the distribution of loan_status.
+
+loan_status_counts=loan_df['loan_status'].value_counts()
+print(loan_status_counts)
+
+# Data Cleaning
+# Handling Missing Values
+print(loan_df.isnull().sum())
+
+# drop columns "id','member_id because they are 100% empty. Also drop columns 'settlement_status','settlement_date','settlement_amount',
+# 'settlement_percentage ' and 'settlement_term' since they have more than 98.5% of data missing(rows)
+
+missing_values = 2227612
+total_values = 2260668
+percentage_missing = (missing_values / total_values) *100
+print(f"percentage of missing values: {percentage_missing:.2f}%") 
+
+# Columns to drop, 10 in total. 
+loan_df.drop(columns=[
+'id','member_id','settlement_status','settlement_date','settlement_amount','settlement_percentage',
+'settlement_term','hardship_payoff_balance_amount','hardship_last_payment_amount','debt_settlement_flag_date',
+'hardship_dpd','hardship_loan_status','orig_projected_additional_accrued_interest'
+], inplace=True)
+#loan_df.drop(columns=columns_to_drop, inplace=True)
+print(loan_df.isnull().sum())
+print(loan_df.head())
+
+# look for more missing values
+print(loan_df.isnull().sum())
+
+# seems like there are more columns with missing values. Eliminate columns with 50% or more missing values using this formula
+na_thresh = len(loan_df) * 50/100
+loan_df = loan_df.dropna(thresh=na_thresh, axis=1)
+print(loan_df.isnull().sum())
+
+# check the columns i am working with
+print(loan_df.columns)
+
+
+loan_df.drop(columns=['title'],inplace=True)
+# print(loan_df.isnull().sum())
+
+print(loan_df.head())
+# Other columns to drop since they do not provide significant value to the analysis
+
+# Replace the categorical missing values
+# Identify categorical columns
+
+categorical_cols = loan_df.select_dtypes(include=['object', 'category']).columns
+
+print("Columns with categorical values:")
+print(categorical_cols.tolist())
+
+# Fill missing values with mode for each categorical column
+
+for col in categorical_cols:
+    loan_df[col].fillna(loan_df[col].mode()[0], inplace=True)
+print(loan_df.head())
+
+print(loan_df.isnull().sum())
+
+# Fil numerical columns missing values with mean
+numerical_cols = loan_df.select_dtypes(include=['int64','float64']).columns
+
+for col in numerical_cols:
+    loan_df[col].fillna(loan_df[col].mean(), inplace=True)
+
+print(loan_df.isnull().sum())
+
+#lets find data with N/A
+print(loan_df.isna().any())
+
+# Print columns with n/a values
+columns_with_na = loan_df.columns[loan_df.isna().any()].tolist()
+for col in columns_with_na:
+    print(col)
+
+# Replace all missing values with a specific value, e.g., 0
+loan_df.fillna(0, inplace=True)
+
+# Print the number of missing values in each column
+print(loan_df.isna().sum())
+
+# Print the updated DataFrame to see the changes
+print(loan_df.head())
+
+# print(loan_df.info())
+print(loan_df.duplicated().any())
+
+print(loan_df.columns)
+# Drop other columns that dont appear to add value to the analysis
+
+loan_df.drop(columns=[
+'earliest_cr_line','last_credit_pull_d','last_pymnt_amnt','collections_12_mths_ex_med','inq_last_12m','collection_recovery_fee',
+'delinq_2yrs','last_pymnt_d','recoveries'
+],inplace=True)
+
+print(loan_df.isna().sum())
+
+print(loan_df.info())
+
+#confirm if there are any null values
+print(loan_df.isnull().any())
+
+# convert 'issue_d' column to datetime format
+loan_df['issue_d'] = pd.to_datetime(loan_df['issue_d'])
+
+# extract year from 'issue_d' column
+loan_df['issue_year'] = loan_df['issue_d'].dt.year
+print(loan_df.head())
+
+# convert term from string to int
+# Clean the loan term by stripping 'months' or removing strings
+def clean_term(term):
+    return int(term.strip().split()[0])
+
+loan_df['term'] = loan_df['term'].apply(clean_term)
+print(loan_df.head())
+
+loan_df.to_csv('cleaned_loan_data.csv', index=False)
+
+# # Visualizatiion: Understanding loan distribution by year
+
+loan_df_processed = loan_df.copy()
+
+approved_loans_by_year = loan_df_processed.groupby('issue_year').size().reset_index(name='approved_loans')
+
+# # Calculate cumulative sum of loans issued by year
+approved_loans_by_year['total_issued_loans'] = approved_loans_by_year['approved_loans'].cumsum()
+
+# # # Plotting
+plt.figure(figsize=(10, 6))
+plt.plot('approved_loans_by_year'['issue_year'], approved_loans_by_year['total_issued_loans'], marker='o', linestyle='-', color='b')
+plt.xlabel('Year Loan Issued')
+plt.ylabel('Total Number of Loans Issued')
+plt.title('Number of Approved Loans by Year')
+plt.grid(True)
+plt.tight_layout()
+plt.show()
