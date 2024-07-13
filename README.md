@@ -1,6 +1,6 @@
 # Lending-Club-Loan Project
 
-![Lending Club Loan](images/Pima%20indian.png)
+![Lending Club Loan]()
 ### Project goal
 The goal of this project was to analyze the Lending Club Loan datadset to uncover insights that could help:
 - Improve decision- making
